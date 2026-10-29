@@ -1,247 +1,157 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-CioData 便携版（免安装）启动器
-=====================================
-本目录自带完整的 Python 3.12 + pandas/numpy/openpyxl/customtkinter/Tkinter。
-不读系统 Python、不写注册表、不改 PATH、不联网装任何东西。
-整个文件夹拷到 U 盘或任意目录都能直接跑（路径含中文/空格也没问题）。
+CioData 源码版启动器（需本机 Python 3.9 ~ 3.12，推荐 3.12）
+=============================================================
+本启动器使用【本机 Python】，不依赖内置 runtime/：
+  1. 自动创建虚拟环境 .venv（首次）；
+  2. 用清华/阿里/官方镜像自动安装 requirements.txt 里的依赖；
+  3. 启动 main.py。
+
+适合开发调试，或直接用本机 Python 跑源码。
+若要"免安装、双击即用"，请用便携版：CioData_portable_win64/CioData/启动 CioData.bat
 
 用法：
-  双击「启动 CioData.bat」
-  命令行：runtime\\python.exe portable_launcher.py --check
+  双击 run.bat  （Windows，等价于 python launcher.py）
+  python launcher.py            # 装依赖 + 启动
+  python launcher.py --check   # 仅做依赖自检，不启动 GUI
 """
 
 import os
 import sys
 import json
-import time
 import subprocess
-from pathlib import Path
 
-HERE = Path(__file__).parent.resolve()
-RUNTIME = HERE / "runtime"
-PYEXE = RUNTIME / "python.exe"
-APP = HERE / "main.py"
-LOG = HERE / "debug_launcher.log"
+HERE = os.path.dirname(os.path.abspath(__file__))
+VENV = os.path.join(HERE, ".venv")
+VENV_PY = (os.path.join(VENV, "Scripts", "python.exe")
+           if os.name == "nt" else os.path.join(VENV, "bin", "python"))
+APP = os.path.join(HERE, "main.py")
+REQ = os.path.join(HERE, "requirements.txt")
 
-REQUIRED = [
-    "numpy", "pandas", "openpyxl", "requests", "customtkinter", "tkinter", "PIL",
-    "dateutil", "pytz", "tzdata", "urllib3", "certifi", "charset_normalizer",
-    "sqlite3", "tkinter.filedialog", "tkinter.font", "tkinter.ttk",
+# 源码版依赖（与 requirements.txt 保持一致）
+REQUIRED = ["numpy", "pandas", "openpyxl", "requests", "customtkinter", "tkinter"]
+
+MIRRORS = [
+    "https://pypi.tuna.tsinghua.edu.cn/simple",
+    "https://mirrors.aliyun.com/pypi/simple",
+    "https://pypi.org/simple",
 ]
 
-_PROBE = r'''
-import sys, json, os
-out = {}
-for m in sys.argv[1].split(","):
+
+def _log(msg=""):
+    print(msg)
+
+
+def ensure_venv():
+    """创建 .venv（若不存在）。返回 venv 里的 python 路径。"""
+    if os.path.exists(VENV_PY):
+        return VENV_PY
+    _log("[1/3] 创建虚拟环境 .venv ...")
     try:
-        mod = __import__(m)
-        v = getattr(mod, "__version__", "")
-        out[m] = ["ok", str(v or "ok"), str(getattr(mod, "__file__", ""))]
-    except BaseException as e:
-        out[m] = ["fail", "%s: %s" % (type(e).__name__, e), ""]
-# tkinter 真正可用性：连上 Tcl 解释器并真正画一个窗口才算行
-try:
-    import tkinter
-    t = tkinter.Tcl()
-    patch = t.eval("info patchlevel")
-    r = tkinter.Tk()
-    r.withdraw()
-    r.update_idletasks()
-    r.destroy()
-    out["__tcl__"] = ["ok", "Tcl/Tk " + patch, ""]
-except BaseException as e:
-    out["__tcl__"] = ["fail", "%s: %s" % (type(e).__name__, e), ""]
-# pandas 读写 Excel 的实际链路（引擎 + lib 是否齐全）
-try:
-    import io, pandas as pd
-    buf = io.BytesIO()
-    pd.DataFrame({"a": [1, 2]}).to_excel(buf, index=False)
-    buf.seek(0)
-    pd.read_excel(buf)
-    out["__excel__"] = ["ok", "pandas + openpyxl", ""]
-except BaseException as e:
-    out["__excel__"] = ["fail", "%s: %s" % (type(e).__name__, e), ""]
-# Databricks 连接器：本版已内置，失败要报错（不是可选了）
-try:
-    import logging as _lg
-    _lg.getLogger("databricks.sql.client").setLevel(_lg.ERROR)
-    import databricks.sql as _dbx
-    ver = getattr(_dbx, "__version__", "?")
-    # 顺带确认几个关键依赖在位
-    import lz4, thrift, oauthlib  # noqa: F401
-    out["__dbx__"] = ["ok", "connector %s" % ver, ""]
-except BaseException as e:
-    out["__dbx__"] = ["fail", "%s: %s" % (type(e).__name__, e), ""]
-print("<<<P>>>" + json.dumps(out, ensure_ascii=False))
-# 结果同时落盘：个别安全软件会注入子进程并持有 stdout 管道句柄不放，
-# 父进程等管道 EOF 就会卡死（实测本机出现过）；文件通道不受影响。
-# 另外探针建过 Tk 窗口，Windows + Tk8.6 解释器收尾也可能死锁，
-# 与 main.py 同理直接 os._exit，不等 finalize。
-_probe_out = os.environ.get("CIODATA_PROBE_OUT")
-if _probe_out:
-    with open(_probe_out, "w", encoding="utf-8") as _f:
-        _f.write(json.dumps(out, ensure_ascii=False))
-sys.stdout.flush()
-os._exit(0)
-'''
+        subprocess.check_call([sys.executable, "-m", "venv", VENV])
+    except subprocess.CalledProcessError as e:
+        _log("\n[错误] 无法创建虚拟环境：%s" % e)
+        _log("       请确认本机 Python 3.9~3.12 安装完整（含 venv 模块）。")
+        _log("       也可手动：python -m venv .venv")
+        input("按回车退出...")
+        sys.exit(1)
+    return VENV_PY
 
 
-def build_env():
-    """构造干净运行环境：屏蔽系统 Python 与用户级包，钉死 Tcl/Tk 路径。"""
-    env = os.environ.copy()
-    env["PYTHONUTF8"] = "1"
-    env["PYTHONIOENCODING"] = "utf-8"
-    env["PYTHONNOUSERSITE"] = "1"
-    env.pop("PYTHONPATH", None)
-    env["PYTHONHOME"] = str(RUNTIME)
-    env["TCL_LIBRARY"] = str(RUNTIME / "tcl" / "tcl8.6")
-    env["TK_LIBRARY"] = str(RUNTIME / "tcl" / "tk8.6")
-    env["PATH"] = os.pathsep.join([
-        str(RUNTIME), str(RUNTIME / "DLLs"), env.get("PATH", "")
-    ])
-    return env
+def pip_install(venv_py):
+    """用多镜像重试安装 requirements.txt。成功返回 True。"""
+    last_err = None
+    for mirror in MIRRORS:
+        _log("  · 使用镜像 %s" % mirror)
+        try:
+            subprocess.check_call([
+                venv_py, "-m", "pip", "install", "--prefer-binary",
+                "-i", mirror, "-r", REQ,
+            ])
+            return True
+        except subprocess.CalledProcessError as e:
+            last_err = e
+            _log("    失败，尝试下一个镜像...")
+    if last_err:
+        _log("\n[错误] 依赖安装失败：%s" % last_err)
+    return False
+
+
+def probe_deps(venv_py):
+    """检查 REQUIRED 模块是否可导入。返回 {模块: 'ok'|'fail:...'}。"""
+    code = (
+        "import importlib, json\n"
+        "out = {}\n"
+        "for m in %r:\n"
+        "    try:\n"
+        "        importlib.import_module(m)\n"
+        "        out[m] = 'ok'\n"
+        "    except Exception as e:\n"
+        "        out[m] = 'fail:%%s' %% e\n"
+        "print('<<<P>>>' + json.dumps(out, ensure_ascii=False))"
+    ) % (REQUIRED,)
+    try:
+        out = subprocess.check_output(
+            [venv_py, "-c", code], stderr=subprocess.DEVNULL, text=True
+        )
+        for line in out.splitlines():
+            if line.startswith("<<<P>>>"):
+                return json.loads(line[len("<<<P>>>"):])
+    except Exception:
+        pass
+    return {}
 
 
 def main():
-    print("=" * 60)
-    print("  CioData 便携版（免安装 · 自带 Python 3.12）")
-    print("  位置：%s" % HERE)
-    print("=" * 60)
+    _log("=" * 60)
+    _log("  CioData 源码版启动器（本机 Python %s）" % sys.version.split()[0])
+    _log("  位置：%s" % HERE)
+    _log("=" * 60)
 
-    if not APP.exists():
-        print("\n[错误] 找不到 main.py，文件夹不完整，请重新解压。")
-        input("按回车退出...")
-        return 1
-    if not PYEXE.exists():
-        print("\n[错误] 找不到 runtime\\python.exe，文件夹不完整。")
-        print("       请把压缩包**整个**重新解压（不要只拖几个文件出来）。")
+    if not os.path.exists(APP):
+        _log("\n[错误] 找不到 main.py，目录不完整。")
         input("按回车退出...")
         return 1
 
-    env = build_env()
+    venv_py = ensure_venv()
 
-    print("\n[1/2] 检查内置依赖（不联网、不读系统环境）...")
-    payload = None
-    out_file = HERE / "_probe_result.json"
-    err_file = HERE / "_probe_error.log"
-    for f in (out_file, err_file):
-        if f.exists():
-            try:
-                f.unlink()
-            except Exception:
-                pass
-    env["CIODATA_PROBE_OUT"] = str(out_file)
-    try:
-        # 走文件通道拿结果，stdout/stderr 不用管道：
-        # 子进程即使被安全软件注入拖住句柄，也不会把父进程卡死。
-        with open(err_file, "w", encoding="utf-8") as errf:
-            p = subprocess.Popen([str(PYEXE), "-c", _PROBE, ",".join(REQUIRED)],
-                                 cwd=str(HERE), env=env,
-                                 stdout=subprocess.DEVNULL, stderr=errf)
-            # 轮询结果文件而不是 p.wait() 阻塞等待：
-            # 个别环境下（安全软件注入/作业对象信号延迟）子进程已退出并写出
-            # 结果文件，p.wait() 却长时间不返回；文件一到就继续，最稳。
-            deadline = time.time() + 180
-            finished = False
-            while time.time() < deadline:
-                if out_file.exists() and out_file.stat().st_size > 0:
-                    finished = True
-                    break
-                if p.poll() is not None:
-                    finished = True
-                    break
-                time.sleep(0.4)
-            if not finished:
-                p.kill()
-                p.wait()
-                print("\n[错误] 自检超时（180 秒）。")
-                print("       常见原因：文件放在网络盘/移动硬盘且传输极慢，或被杀软实时扫描卡住。")
-                print("       建议把整个文件夹复制到本地磁盘再试。")
-                input("按回车退出...")
-                return 1
-        if out_file.exists():
-            try:
-                payload = json.loads(out_file.read_text(encoding="utf-8"))
-            except ValueError:
-                payload = None
-    except Exception as e:
-        print("\n[错误] 自检子进程失败：%s" % e)
-        input("按回车退出...")
-        return 1
-
-    if not payload:
-        print("\n[错误] 内置 Python 启动异常，错误输出：")
-        try:
-            print(err_file.read_text(encoding="utf-8", errors="replace")[-1500:] or "(无输出)")
-        except Exception:
-            print("(无输出)")
-        print("\n常见原因：")
-        print("  · 解压不完整（被杀毒软件拦截）—— 关掉杀软重新解压")
-        print("  · 文件夹放在只读网络盘 —— 换到本地磁盘或 U 盘")
-        input("按回车退出...")
-        return 1
-
-    bad = []
-    labels = {
-        "__tcl__": "Tcl/Tk 运行时",
-        "__excel__": "Excel 读写链路",
-        "__dbx__": "Databricks 连接",
-    }
-    order = ["numpy", "pandas", "openpyxl", "PIL", "customtkinter", "tkinter",
-             "tkinter.filedialog", "tkinter.font", "tkinter.ttk", "sqlite3",
-             "requests", "urllib3", "certifi", "charset_normalizer", "dateutil",
-             "pytz", "tzdata", "__tcl__", "__excel__", "__dbx__"]
-
-    for m in order:
-        info = payload.get(m)
-        if not info:
-            continue
-        label = labels.get(m, m)
-        state, detail = info[0], info[1]
-        if state == "ok":
-            print("   OK    %-20s %s" % (label, detail))
-        elif state == "opt":
-            print("   --    %-20s %s" % (label, detail))
-        else:
-            print("   FAIL  %-20s %s" % (label, detail))
-            bad.append(m)
-
-    if bad:
-        print("\n[错误] 内置依赖不完整：%s" % ", ".join(bad))
-        print("       本压缩包可能被安全软件删改过，请重新解压一份完整的。")
-        print("       若反复失败，把压缩包换到别的目录解压再试。")
-        input("按回车退出...")
-        return 1
-
-    # 清理探针临时文件
-    for f in (out_file, err_file):
-        try:
-            if f.exists():
-                f.unlink()
-        except Exception:
-            pass
+    _log("\n[2/3] 检查依赖...")
+    status = probe_deps(venv_py)
+    missing = [m for m, s in status.items() if not str(s).startswith("ok")]
+    if missing or not status:
+        _log("  需要安装依赖：%s" % (", ".join(missing) if missing else "全部"))
+        if not pip_install(venv_py):
+            _log("       请检查网络后重试，或手动在 .venv 中执行：")
+            _log("       %s -m pip install -r requirements.txt" % venv_py)
+            input("按回车退出...")
+            return 1
+        status = probe_deps(venv_py)
+        missing = [m for m, s in status.items() if not str(s).startswith("ok")]
+        if missing:
+            _log("\n[错误] 以下依赖仍缺失：%s" % ", ".join(missing))
+            _log("       常见原因：当前 Python 版本与 customtkinter 不兼容"
+                 "（建议用 Python 3.12），或网络不通。")
+            _log("       也可直接用便携版（自带 Python 3.12 + 全部依赖）。")
+            input("按回车退出...")
+            return 1
+    else:
+        _log("  依赖齐全，跳过安装。")
 
     if "--check" in sys.argv:
-        print("\n[--check] 体检通过，不启动应用。")
+        _log("\n[--check] 自检通过，不启动应用。")
         return 0
 
-    print("\n[2/2] 启动应用...")
-    print("-" * 60)
+    _log("\n[3/3] 启动应用...")
+    _log("-" * 60)
     try:
-        rc = subprocess.run([str(PYEXE), str(APP)], cwd=str(HERE), env=env).returncode
+        rc = subprocess.call([venv_py, APP], cwd=HERE)
     except KeyboardInterrupt:
         return 0
     except Exception as e:
-        print("\n[错误] 启动失败：%s" % e)
+        _log("\n[错误] 启动失败：%s" % e)
         input("按回车退出...")
         return 1
-
-    if rc != 0:
-        print("\n[错误] 应用异常退出，返回码 %s" % rc)
-        print("       日志：%s" % LOG)
-        input("按回车退出...")
     return rc
 
 

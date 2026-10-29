@@ -12,6 +12,9 @@ runtime/
 __pycache__/
 *.pyc
 
+# 源码版自动创建的虚拟环境（由 launcher.py 生成，不入库）
+.venv/
+
 # 打包产物（便携版 zip 仅作为 GitHub Release 附件，不入库）
 # Build artifacts (portable zip is a Release attachment, not repo content)
 *.zip
