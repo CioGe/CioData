@@ -1,0 +1,10 @@
+# CioData 依赖清单（兼容 Python 3.9 ~ 3.14）
+pandas>=2.0.0
+numpy>=1.24.0
+openpyxl>=3.1.0
+requests>=2.28.0
+customtkinter>=5.2.0
+
+# 可选依赖（启动器按需安装，不影响核心功能）：
+#   xlrd>=2.0.0                  旧版 .xls 文件支持
+#   databricks-sql-connector>=2.0.0   Databricks 连接

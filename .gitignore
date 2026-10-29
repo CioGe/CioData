@@ -1,0 +1,39 @@
+# ===== CioData 仓库忽略项 / Repository ignores =====
+
+# 用户本地配置（含 API Key / Databricks Token，明文，绝不入库）
+# User local config (holds API keys / Databricks tokens in plaintext — never commit)
+settings.json
+
+# 便携版内置 Python 运行时（数 GB，仅随 Release 附件分发，不入库）
+# Portable embedded Python runtime (several GB) — distributed only as a Release asset
+runtime/
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 打包产物（便携版 zip 仅作为 GitHub Release 附件，不入库）
+# Build artifacts (portable zip is a Release attachment, not repo content)
+*.zip
+
+# Docker 相关（本仓库以源码形式开源，容器化另行维护）
+# Docker (source-only repo; containerization maintained separately)
+docker/
+Dockerfile
+docker-compose.yml
+DOCKER.md
+.dockerignore
+
+# 临时/调试日志与探针脚本
+# Temp / debug logs and probe scripts
+_probe_*
+_verify_*
+_test_*
+_i18n*
+*.log
+debug_launcher.log
+
+# 系统文件 / OS files
+Thumbs.db
+desktop.ini
+.DS_Store
