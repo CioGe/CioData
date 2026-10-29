@@ -139,8 +139,7 @@ Each file holds 500 sales-order rows. Load it and ask in plain language, e.g. *"
 ```
 CioData/
 ├── main.py              # 入口 entry point
-├── launcher.py          # 启动器（venv+依赖自检+多镜像安装）launcher
-├── portable_launcher.py # 便携版启动器（文件通道自检，避免管道死锁）portable launcher
+├── launcher.py          # 源码版启动器（venv+依赖自检+多镜像安装）source launcher
 ├── config.py            # 配置中心 + 5 套双语提示词模板 config + bilingual prompts
 ├── settings.py          # settings.json 持久化 persistence
 ├── i18n.py              # 中英文界面字符串（159 键全量配对）zh/en strings (159 fully paired)
@@ -164,6 +163,8 @@ CioData/
 ├── 启动工具.sh           # 源码版启动器（macOS / Linux）source launcher
 └── 安装Databricks依赖.bat # Databricks 连接器一键安装 Databricks installer
 ```
+
+> 注：便携版启动器 `启动 CioData.bat` / `portable_launcher.py` 依赖内置 `runtime/`（数 GB），**仅随 GitHub Release 附件 `CioData_portable_win64.zip` 分发，不纳入本仓库**。本仓库只含源码，需用本机 Python 3.12 运行（见上方「方式二：源码运行」）。
 
 ---
 
