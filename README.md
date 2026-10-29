@@ -46,12 +46,12 @@ git clone <your-fork-or-this-repo>
 cd CioData
 pip install -r requirements.txt
 python main.py                 # 直接跑 / run directly
-# 或 / or  双击 启动工具.bat
+# 或 / or  双击 run.bat
 python selfcheck.py            # 核心逻辑自检（20+ 项）/ core self-checks
 ```
 
-需要连 Databricks：双击 **安装Databricks依赖.bat** 一键装连接器（源码版）。
-To connect Databricks on the source build, double-click **安装Databricks依赖.bat**.
+需要连 Databricks：双击 **install_databricks.bat** 一键装连接器（源码版）。
+To connect Databricks on the source build, double-click **install_databricks.bat**.
 
 ---
 
@@ -159,9 +159,9 @@ CioData/
 ├── generate_sample.py   # 中文示例数据 sample-data (zh)
 ├── generate_sample_en.py # 英文示例数据 sample-data (en)
 ├── assets/              # 图标 icon (icon.png / icon.ico)
-├── 启动工具.bat          # 源码版启动器（Windows）source launcher
-├── 启动工具.sh           # 源码版启动器（macOS / Linux）source launcher
-└── 安装Databricks依赖.bat # Databricks 连接器一键安装 Databricks installer
+├── run.bat                # 源码版启动器（Windows）source launcher
+├── run.sh                 # 源码版启动器（macOS / Linux）source launcher
+└── install_databricks.bat # Databricks 连接器一键安装 Databricks installer
 ```
 
 > 注：便携版启动器 `启动 CioData.bat` / `portable_launcher.py` 依赖内置 `runtime/`（数 GB），**仅随 GitHub Release 附件 `CioData_portable_win64.zip` 分发，不纳入本仓库**。本仓库只含源码，需用本机 Python 3.12 运行（见上方「方式二：源码运行」）。

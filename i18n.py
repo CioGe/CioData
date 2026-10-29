@@ -56,7 +56,7 @@ _STRINGS = {
         "db.schema": "Schema",
         "db.query": "SQL查询（仅SELECT）",
         "db.connect": "☁️ 连接Databricks",
-        "db.install_hint": "首次使用需安装依赖：双击项目目录下的「安装Databricks依赖.bat」",
+        "db.install_hint": "首次使用需安装依赖：双击项目目录下的「install_databricks.bat」",
 
         # ==================== 侧栏 · 显示字段 ====================
         "fields.hint_empty": "加载数据后可勾选要展示的列",
@@ -182,7 +182,7 @@ _STRINGS = {
         "err.csv_load": "❌ CSV加载失败(编码{enc}): {e}",
         "err.csv_encoding": "❌ CSV编码无法识别，请尝试另存为UTF-8格式",
         "err.sheets": "❌ 读取sheet列表失败: {e}",
-        "err.db_missing": ("❌ Databricks依赖未安装。请双击项目目录下的「安装Databricks依赖.bat」，\n"
+        "err.db_missing": ("❌ Databricks依赖未安装。请双击项目目录下的「install_databricks.bat」，\n"
                            "或在黑窗口执行: .venv\\Scripts\\python.exe -m pip install databricks-sql-connector\n\n"
                            "（若安装失败，多为系统缺少C++编译工具，建议改用Excel/CSV方式）"),
         "err.db_query": "❌ 仅支持 SELECT / WITH 查询（只读保护）",
@@ -253,7 +253,7 @@ _STRINGS = {
         "db.schema": "Schema",
         "db.query": "SQL query (SELECT only)",
         "db.connect": "☁️ Connect Databricks",
-        "db.install_hint": "First time? Double-click \"安装Databricks依赖.bat\" in the project folder to install the connector",
+        "db.install_hint": "First time? Double-click \"install_databricks.bat\" in the project folder to install the connector",
 
         # Fields
         "fields.hint_empty": "Load data to choose visible columns",
@@ -379,7 +379,7 @@ _STRINGS = {
         "err.csv_load": "❌ CSV load failed (encoding {enc}): {e}",
         "err.csv_encoding": "❌ Could not detect CSV encoding. Try saving as UTF-8",
         "err.sheets": "❌ Failed to read sheet list: {e}",
-        "err.db_missing": ("❌ Databricks connector not installed. Double-click \"安装Databricks依赖.bat\" "
+        "err.db_missing": ("❌ Databricks connector not installed. Double-click \"install_databricks.bat\" "
                            "in the project folder, or run:\n"
                            "    .venv\\Scripts\\python.exe -m pip install databricks-sql-connector\n\n"
                            "(If it fails, your system may lack C++ build tools — use Excel/CSV instead)"),
