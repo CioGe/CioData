@@ -40,3 +40,7 @@ debug_launcher.log
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# 误生成的嵌套仓库（GitHub Desktop 里误点"新建仓库"指向本目录时产生，非项目内容）
+# Accidental nested repo created when GitHub Desktop "New repository" points at this folder
+/CioData/
