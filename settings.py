@@ -39,8 +39,9 @@ _DEFAULTS = {
     # 加载/分页
     "row_limit": config.DEFAULT_ROW_LIMIT,
     "page_size": config.DEFAULT_PAGE_SIZE,
-    # SQL 片段 DIY 存储（10 个槽位）
+    # SQL 片段 DIY 存储（默认 10 个槽位，数量可增减）
     "sql_snippets": [{"name": "", "sql": ""} for _ in range(10)],
+    "sql_snippet_slots": 10,
     # Databricks
     "db_host": "",
     "db_http_path": "",
