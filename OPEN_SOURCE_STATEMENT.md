@@ -9,7 +9,7 @@ This statement follows the same approach as CioNote and **keeps the CioData bran
 
 ## 1. What is CioData
 
-CioData is a **local-first** desktop tool (Python + CustomTkinter + Tkinter): load Excel / CSV / Databricks data, ask questions in plain language, and an LLM turns them into SQL that runs locally — paginated results and one-click CSV export. The top-right panel also ships a **SQL Snippet Storage** (10 slots to stash frequently-used SQL and adopt them into the editor in one click). Strictly read-only: your source data is never modified.
+CioData is a **local-first** desktop tool (Python + CustomTkinter + Tkinter): load Excel / CSV / Databricks data, ask questions in plain language, and an LLM turns them into SQL that runs locally — paginated results and one-click CSV export. The top-right panel also ships a **SQL Snippet Storage** (10 slots by default, adjustable 1–50, to stash frequently-used SQL and adopt them into the editor in one click). Strictly read-only: your source data is never modified.
 
 Key features:
 
@@ -20,7 +20,7 @@ Key features:
 | Databricks read-only | Built-in connector + strict read-only validation (blocks writes, stacked statements, comment bypass, CTE smuggling) |
 | Zero-install portable | Bundled Python 3.12 runtime, extract-and-run, USB-portable |
 | Bilingual | UI fully paired (159 zh/en keys), one-click switch; **separate zh/en AI prompts** (`system_prompt` / `system_prompt_en`) |
-| SQL Snippet Storage | 10 slots: name display + edit popup + adopt into the SQL editor, persisted in `settings.json` |
+| SQL Snippet Storage | 10 slots by default (adjustable 1–50 via − / +): name display + edit popup + adopt into the SQL editor, persisted in `settings.json` |
 
 ## 2. Open Source Scope
 

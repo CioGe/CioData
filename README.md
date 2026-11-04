@@ -53,7 +53,7 @@ To connect Databricks on the source build, double-click **`install_databricks.ba
 | 📝 SQL Editor | Line numbers + keyword highlighting, Ctrl+Enter to run, SQLite dialect |
 | 📋 Results Table | Pagination / click header to sort / double-click a cell to copy / one-click CSV export (UTF-8 BOM) |
 | 🤖 AI Chat | Natural language → SQL, one-click "Adopt & Run" or "Adopt only" |
-| 🧩 **SQL Snippet Storage** | **10 slots** on the top-right: name display + edit popup + adopt into editor |
+| 🧩 **SQL Snippet Storage** | **10 slots by default** on the top-right (adjustable 1–50): name display + edit popup + adopt into editor |
 | 🧠 AI Backend | OpenAI-compatible API / local Ollama / Dify, three isolated backends |
 | 🧠 Prompts | 5 industry templates + custom business-term rules + advanced system-prompt editor; **separate zh/en prompts** |
 | 👁️ Visible Fields | Toggle columns to show; view-only, never touches data |
@@ -61,13 +61,13 @@ To connect Databricks on the source build, double-click **`install_databricks.ba
 
 ### New: SQL Snippet Storage (v3.4)
 
-The top-right panel offers **10 snippet slots** to stash frequently-used SQL:
+The top-right panel offers **10 snippet slots** by default to stash frequently-used SQL. Use the `−` / `+` buttons in the panel header to change the count (1–50); lowering the count only hides slots, stored SQL is never deleted.
 
-- **Name**: display-only (edited in the popup)
+- **Name**: display-only (edited in the popup); names longer than 22 characters are truncated with `…` so the buttons stay visible
 - **Edit**: popup to set name + SQL, saved on "Save"
 - **Adopt**: one click drops the stored SQL into the editor for you to run (empty slots disabled)
 
-Persisted in `settings.json` → `sql_snippets`; survives restarts.
+Persisted in `settings.json` → `sql_snippets` / `sql_snippet_slots`; survives restarts.
 
 ---
 
@@ -131,7 +131,7 @@ CioData/
 │   ├── sidebar.py       # left config panel
 │   ├── workspace.py     # SQL editor + results table
 │   ├── chat_panel.py    # AI chat
-│   ├── sql_snippets.py  # SQL snippet storage (10 slots)
+│   ├── sql_snippets.py  # SQL snippet storage (10 slots by default, adjustable)
 │   ├── sql_editor.py    # line-numbered highlighted editor
 │   ├── data_table.py    # paginated sortable table
 │   └── ...

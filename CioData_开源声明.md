@@ -12,7 +12,7 @@ This statement follows the same approach as CioNote and **keeps the CioData bran
 
 CioData 是一个本地运行的桌面小工具（Python + CustomTkinter + Tkinter）：
 把 Excel / CSV / Databricks 的数据加载进来，用自然语言向 AI 提问，它生成 SQL、
-本地执行、分页展示，并支持一键导出 CSV。右侧还内置 **SQL 语句 DIY 存储**（10 个槽位，
+本地执行、分页展示，并支持一键导出 CSV。右侧还内置 **SQL 语句 DIY 存储**（默认 10 个槽位，可增减至 1–50，
 存常用 SQL、一键采用到编辑器），全程只读，绝不改动原始数据。
 
 核心特性：
