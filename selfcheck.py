@@ -130,6 +130,11 @@ def main():
     for name, tpl in config.PROMPT_TEMPLATES.items():
         ok = "{schema}" in tpl["system_prompt"] and "{custom_rules}" in tpl["system_prompt"]
         check(f"模板占位符完整: {name}", ok)
+        # 模板名/描述必须走 i18n：i18n.t() 缺键时原样返回键名，据此可判定漏翻
+        nk = tpl.get("name_key", "")
+        check(f"模板名称已国际化: {name}", bool(nk) and i18n.t(nk) != nk)
+        dk = tpl.get("desc_key", "")
+        check(f"模板描述已国际化: {name}", bool(dk) and i18n.t(dk) != dk)
     check("默认SQL表名为df", "df" in config.DEFAULT_SQL)
     check("后端含ollama", "ollama" in config.LLM_BACKENDS and "local" not in config.LLM_BACKENDS)
     for v, k in config.ROW_LIMIT_OPTIONS:

@@ -12,6 +12,10 @@
   <a href="README.zh-CN.md">中文</a> · English &nbsp;|&nbsp; Local-first &nbsp;|&nbsp; Zero-install portable build &nbsp;|&nbsp; MIT
 </p>
 
+<p align="center">
+  <img src="assets/screenshot.png" width="880" alt="CioData main window: data source panel, SQL editor, results table, snippet slots and AI chat"/>
+</p>
+
 ---
 
 CioData is a **local-first** desktop tool (Python + CustomTkinter + Tkinter). Load Excel / CSV / Databricks data, ask in plain language, and an LLM turns it into SQL that runs locally — paginated results and one-click CSV export. Strictly read-only: your source data is never modified.

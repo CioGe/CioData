@@ -13,6 +13,7 @@ SETTINGS_FILE = "settings.json"   # 保存在项目目录，本地明文（见�
 # ---------- 内置提示词模板 ----------
 PROMPT_TEMPLATES = {
     "通用数据分析": {
+        "name_key": "prompt.name.general",
         "desc_key": "prompt.tpl.general",
         "system_prompt": (
             "你是一名资深数据分析SQL专家，任务是把用户的中文自然语言需求转换成**可直接执行的SQLite SELECT查询语句**。\n\n"
@@ -48,6 +49,7 @@ PROMPT_TEMPLATES = {
         ),
     },
     "销售/电商分析": {
+        "name_key": "prompt.name.sales",
         "desc_key": "prompt.tpl.sales",
         "system_prompt": (
             "你是一名资深电商数据分析师，精通SQLite SQL，负责把销售/电商业务需求转换成 SELECT 查询。\n\n"
@@ -91,6 +93,7 @@ PROMPT_TEMPLATES = {
         ),
     },
     "财务/会计分析": {
+        "name_key": "prompt.name.finance",
         "desc_key": "prompt.tpl.finance",
         "system_prompt": (
             "你是一名财务数据分析师，熟悉SQLite SQL，负责把财务/会计需求转换成SELECT查询。\n\n"
@@ -127,6 +130,7 @@ PROMPT_TEMPLATES = {
         ),
     },
     "用户运营/增长分析": {
+        "name_key": "prompt.name.growth",
         "desc_key": "prompt.tpl.growth",
         "system_prompt": (
             "你是一名用户增长数据分析师，精通SQLite SQL，负责把运营分析需求转换成SELECT查询。\n\n"
@@ -168,6 +172,7 @@ PROMPT_TEMPLATES = {
         ),
     },
     "BI透视/统计分析": {
+        "name_key": "prompt.name.bi",
         "desc_key": "prompt.tpl.bi",
         "system_prompt": (
             "你是一名BI/统计分析师，精通SQLite SQL，负责把透视统计/探索性分析需求转换为SELECT。\n\n"

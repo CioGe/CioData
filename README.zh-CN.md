@@ -12,6 +12,10 @@
   中文 · <a href="README.md">English</a> &nbsp;|&nbsp; 纯本地运行 &nbsp;|&nbsp; 零安装便携版 &nbsp;|&nbsp; MIT 开源
 </p>
 
+<p align="center">
+  <img src="assets/screenshot.png" width="880" alt="CioData 主界面：数据源面板、SQL 编辑器、结果表格、SQL 槽位与 AI 对话"/>
+</p>
+
 ---
 
 CioData 是一个**本地运行**的桌面小工具（Python + CustomTkinter + Tkinter）：把 Excel / CSV / Databricks 的数据加载进来，用大白话向 AI 提问，它生成 SQL、本地执行、分页展示，并支持一键导出 CSV。全程只读，**绝不改动你的原始数据**。

@@ -290,19 +290,28 @@ class Sidebar(ctk.CTkFrame):
         cur = self._settings.get("prompt_template", config.DEFAULT_TEMPLATE)
         if cur not in config.PROMPT_TEMPLATES:
             cur = config.DEFAULT_TEMPLATE
-        self.tpl_var = ctk.StringVar(value=cur)
+        # 内部模板键 <-> 当前语言显示名（同 backend 下拉模式，见 _backend_keys）
+        # 铁律：settings["prompt_template"] 永远存内部中文键，只有显示层走 i18n
+        self._tpl_labels = {i18n.t(v.get("name_key", k)): k
+                            for k, v in config.PROMPT_TEMPLATES.items()}
+        self.tpl_var = ctk.StringVar(
+            value=i18n.t(config.PROMPT_TEMPLATES[cur].get("name_key", cur)))
         self.tpl_menu = ctk.CTkComboBox(
-            card.body, variable=self.tpl_var, values=list(config.PROMPT_TEMPLATES.keys()),
+            card.body, variable=self.tpl_var, values=list(self._tpl_labels.keys()),
             width=200, height=28, font=self._fonts.small, dropdown_font=self._fonts.small,
             fg_color=T.SURFACE_2, border_color=T.BORDER, button_color=T.SURFACE_2,
             button_hover_color=T.HOVER, text_color=T.TEXT,
-            command=lambda _v: self._save_prompt(),
+            # CTkComboBox 的 command 不同步 variable，必须用传入的 value
+            command=self._on_tpl_change,
         )
         self.tpl_menu.pack(fill="x")
         self.tpl_desc = ctk.CTkLabel(card.body, text=self._tpl_desc(cur),
                                      font=self._fonts.tiny, text_color=T.TEXT_3, anchor="w",
                                      wraplength=210, justify="left")
         self.tpl_desc.pack(fill="x", pady=(4, 6))
+        # 描述按侧栏实际宽度换行（原先 210 写死，英文长句被裁成 "...queri"）
+        card.body.bind("<Configure>",
+                       lambda e: self.tpl_desc.configure(wraplength=max(e.width - 20, 80)))
 
         ctk.CTkLabel(card.body, text=i18n.t("prompt.rules"), font=self._fonts.small,
                      text_color=T.TEXT_2, anchor="w").pack(fill="x", pady=(2, 0))
@@ -330,6 +339,20 @@ class Sidebar(ctk.CTkFrame):
         SubtleButton(adv_btns, text=i18n.t("prompt.adv_reset"),
                      command=self._reset_sys_prompt, height=24).pack(side="left")
         self._advanced_visible = False
+
+    def _tpl_key(self, label=None):
+        """显示名 → 内部模板键。
+
+        唯一出口：所有需要模板键的地方都走这里，避免显示名泄进 settings。
+        """
+        label = self.tpl_var.get() if label is None else label
+        return self._tpl_labels.get(label, config.DEFAULT_TEMPLATE)
+
+    def _on_tpl_change(self, label):
+        """下拉选中回调（用传入值，不依赖 variable 是否同步）。"""
+        if self.tpl_var.get() != label:
+            self.tpl_var.set(label)
+        self._save_prompt()
 
     def _tpl_desc(self, tpl_name):
         key = config.PROMPT_TEMPLATES.get(tpl_name, {}).get("desc_key", "")
@@ -539,7 +562,7 @@ class Sidebar(ctk.CTkFrame):
 
     # ==================== 提示词 ====================
     def _save_prompt(self):
-        tpl = self.tpl_var.get()
+        tpl = self._tpl_key()
         self.tpl_desc.configure(text=self._tpl_desc(tpl))
         self._settings.set("prompt_template", tpl)
         raw_rules = self.rules_box.get("1.0", "end-1c").rstrip("\n")
@@ -562,7 +585,7 @@ class Sidebar(ctk.CTkFrame):
         if self._advanced_visible:
             sys_prompt = self.sys_prompt_box.get("1.0", "end-1c").strip()
         return {
-            "template": self.tpl_var.get(),
+            "template": self._tpl_key(),
             "custom_rules": custom,
             "system_prompt": sys_prompt,
         }
@@ -570,7 +593,7 @@ class Sidebar(ctk.CTkFrame):
     def _toggle_advanced(self):
         self._advanced_visible = not self._advanced_visible
         if self._advanced_visible:
-            tpl = self.tpl_var.get()
+            tpl = self._tpl_key()
             default = config.PROMPT_TEMPLATES[tpl].get("system_prompt_en") if i18n.current() == "en" else config.PROMPT_TEMPLATES[tpl]["system_prompt"]
             self.sys_prompt_box.delete("1.0", "end")
             self.sys_prompt_box.insert("1.0", self._settings.get("system_prompt", "") or default)
@@ -581,8 +604,11 @@ class Sidebar(ctk.CTkFrame):
             self.adv_btn.configure(text=i18n.t("prompt.adv_show"))
 
     def _reset_sys_prompt(self):
-        tpl = self.tpl_var.get()
-        default = config.PROMPT_TEMPLATES[tpl]["system_prompt"]
+        tpl = self._tpl_key()
+        tpl_data = config.PROMPT_TEMPLATES[tpl]
+        # 英文界面下必须恢复英文默认提示词（原实现固定插中文）
+        default = (tpl_data.get("system_prompt_en", tpl_data["system_prompt"])
+                   if i18n.current() == "en" else tpl_data["system_prompt"])
         self.sys_prompt_box.delete("1.0", "end")
         self.sys_prompt_box.insert("1.0", default)
         self._save_prompt()
