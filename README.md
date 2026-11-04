@@ -83,7 +83,7 @@ Data is deep-copied on load; SQL runs in an isolated in-memory SQLite database; 
 
 ## 📊 Sample Data
 
-The repo ships two ready-to-open demo datasets (500 sales-order rows each: order date / city / channel / product / category / customer level / unit price / quantity / discount / cost / sales amount / profit):
+The repo ships two ready-to-open demo datasets (500 rows × 13 columns each: order ID / order date / city / channel / product / category / customer level / unit price / quantity / discount / cost / sales amount / profit):
 
 | File | Language | Generator |
 |------|----------|-----------|

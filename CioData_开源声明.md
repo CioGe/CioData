@@ -24,7 +24,7 @@ CioData 是一个本地运行的桌面小工具（Python + CustomTkinter + Tkint
 | Databricks 只读 | 内置连接器 + 严格只读校验（拦截写操作、堆叠语句、注释绕过、CTE 夹带） |
 | 零安装便携版 | 自带 Python 3.12 运行时，解压即用，U 盘可携带 |
 | 中英双语 | 界面 159 键全量配对、一键切换；AI 提示词中英文各自独立（system_prompt / system_prompt_en） |
-| SQL 片段存储 | 右侧 10 槽位，名称显示 + 编辑弹窗 + 采用到 SQL 编辑器，持久化于 settings.json |
+| SQL 片段存储 | 右侧默认 10 槽位（可增减 1–50），名称显示 + 编辑弹窗 + 采用到 SQL 编辑器，持久化于 settings.json |
 
 ## 二、开源范围
 
