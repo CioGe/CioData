@@ -20,5 +20,7 @@
   "db_token": "",
   "db_catalog": "hive_metastore",
   "db_schema": "default",
-  "db_query": "SELECT * FROM your_table LIMIT 1000"
+  "db_query": "SELECT * FROM your_table LIMIT 1000",
+  "sql_snippet_slots": 10,
+  "sql_snippets": []
 }
