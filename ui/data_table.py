@@ -33,11 +33,13 @@ def _fmt_cell(v) -> str:
 
 
 class DataTable(ctk.CTkFrame):
-    def __init__(self, master, on_export=None, on_page_size_change=None, **kw):
+    def __init__(self, master, on_export=None, on_chart=None,
+                 on_page_size_change=None, **kw):
         super().__init__(master, fg_color=T.SURFACE, border_width=1,
                          border_color=T.BORDER, corner_radius=T.RADIUS, **kw)
         self._fonts = FontsHolder.get()
         self._on_export = on_export
+        self._on_chart = on_chart
         self._on_page_size_change = on_page_size_change
 
         self.df = None
@@ -55,6 +57,10 @@ class DataTable(ctk.CTkFrame):
         self.export_btn = GhostButton(bar, text=i18n.t("ws.export"), command=self._export, height=28)
         self.export_btn.pack(side="right")
         self.export_btn.configure(state="disabled")
+        # 出图按钮排在「导出CSV」左侧：side="right" 后 pack 的靠内
+        self.chart_btn = GhostButton(bar, text=i18n.t("chart.btn"), command=self._chart, height=28)
+        self.chart_btn.pack(side="right", padx=(0, 6))
+        self.chart_btn.configure(state="disabled")
 
         # ---------- 表格 ----------
         table_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -221,6 +227,7 @@ class DataTable(ctk.CTkFrame):
             self.info_label.configure(text=i18n.t("ws.empty_result"))
             self.page_label.configure(text=i18n.t("ws.page_zero"))
             self.export_btn.configure(state="disabled")
+            self.chart_btn.configure(state="disabled")
             return
         total = len(self.df)
         pages = max(1, (total + self.page_size - 1) // self.page_size)
@@ -238,6 +245,8 @@ class DataTable(ctk.CTkFrame):
         self.prev_btn.configure(state="normal" if self.page > 1 else "disabled")
         self.next_btn.configure(state="normal" if self.page < pages else "disabled")
         self.export_btn.configure(state="normal")
+        # 一列都没勾选时没东西可画
+        self.chart_btn.configure(state="normal" if len(self.df.columns) else "disabled")
 
     # ---------- 交互 ----------
     def sort_by(self, col):
@@ -302,3 +311,8 @@ class DataTable(ctk.CTkFrame):
     def _export(self):
         if self._on_export and self.df is not None:
             self._on_export(self.df)
+
+    def _chart(self):
+        """出图数据 = 当前表格数据（SQL 结果再经左侧字段勾选），取全部行。"""
+        if self._on_chart and self.df is not None and len(self.df):
+            self._on_chart(self.df)

@@ -18,7 +18,7 @@
 
 ---
 
-CioData is a **local-first** desktop tool (Python + CustomTkinter + Tkinter). Load Excel / CSV / Databricks data, ask in plain language, and an LLM turns it into SQL that runs locally — paginated results and one-click CSV export. Strictly read-only: your source data is never modified.
+CioData is a **local-first** desktop tool (Python + CustomTkinter + Tkinter). Load Excel / CSV / Databricks data, ask in plain language, and an LLM turns it into SQL that runs locally — paginated results, one-click CSV export, and one-click charts. Strictly read-only: your source data is never modified.
 
 ---
 
@@ -56,6 +56,7 @@ To connect Databricks on the source build, double-click **`install_databricks.ba
 | 📁 Data Source | Local Excel(.xlsx/.xls)/CSV; Databricks SQL (built-in in portable, installable for source) |
 | 📝 SQL Editor | Line numbers + keyword highlighting, Ctrl+Enter to run, SQLite dialect |
 | 📋 Results Table | Pagination / click header to sort / double-click a cell to copy / one-click CSV export (UTF-8 BOM) |
+| 📊 **Charts** | One click from the results toolbar: pie / bar / line / scatter, smart defaults, live-follows data changes, PNG export |
 | 🤖 AI Chat | Natural language → SQL, one-click "Adopt & Run" or "Adopt only" |
 | 🧩 **SQL Snippet Storage** | **10 slots by default** on the top-right (adjustable 1–50): name display + edit popup + adopt into editor |
 | 🧠 AI Backend | OpenAI-compatible API / local Ollama / Dify, three isolated backends |
@@ -72,6 +73,18 @@ The top-right panel offers **10 snippet slots** by default to stash frequently-u
 - **Adopt**: one click drops the stored SQL into the editor for you to run (empty slots disabled)
 
 Persisted in `settings.json` → `sql_snippets` / `sql_snippet_slots`; survives restarts.
+
+### New: One-Click Charts
+
+The `📊 Chart` button sits next to **Export CSV** above the results table. It plots exactly what you see: rows already filtered by your SQL (all rows, not just the current page), columns already toggled in the left sidebar.
+
+- **Four types**: pie / bar / line / scatter — switch with one click
+- **Smart defaults**: date + number → line, low-cardinality category + number → bar (top 10), two numbers → scatter, single category + number → pie
+- **Adjustable**: X / Y axis, aggregation (sum / average / count / max / none), sort order, Top N, value labels
+- **Live follow**: re-run SQL or toggle a sidebar column and the open chart redraws itself; if the selected column disappears it falls back to a fresh smart default
+- **Export**: save the current chart as PNG (200 dpi) for reports or slides
+
+Numbers over 10,000 are abbreviated (10K / 1.2M in English, 1.2万 / 1.3亿 in Chinese); large scatters are evenly sampled with the sample size shown in the hint bar.
 
 ---
 
@@ -126,20 +139,22 @@ CioData/
 ├── launcher.py          # source launcher (venv + dependency self-check + mirror install)
 ├── config.py            # config center + 5 bilingual prompt templates
 ├── settings.py          # settings.json persistence
-├── i18n.py              # zh/en UI strings (159 fully-paired keys)
+├── i18n.py              # zh/en UI strings (218 fully-paired keys)
 ├── data_loader.py       # Excel/CSV/Databricks loading
 ├── sql_engine.py        # in-memory SQLite engine + read-only checks + timeout
+├── charting.py          # chart engine: column profiling, smart defaults, Figure building
 ├── llm_client.py        # OpenAI-compatible / Dify client + Ollama model scan
 ├── ui/                  # CustomTkinter UI
 │   ├── app.py           # main window (language-switch rebuild, window icon)
 │   ├── sidebar.py       # left config panel
 │   ├── workspace.py     # SQL editor + results table
+│   ├── chart_window.py  # chart popup (single instance, follows data changes)
 │   ├── chat_panel.py    # AI chat
 │   ├── sql_snippets.py  # SQL snippet storage (10 slots by default, adjustable)
 │   ├── sql_editor.py    # line-numbered highlighted editor
 │   ├── data_table.py    # paginated sortable table
 │   └── ...
-├── selfcheck.py         # core self-checks (20+ items)
+├── selfcheck.py         # core self-checks (80 items)
 ├── generate_sample.py   # Chinese sample-data generator
 ├── generate_sample_en.py# English sample-data generator
 ├── assets/              # icon (icon.png / icon.ico)
@@ -178,7 +193,7 @@ Provided "as is", without warranty of any kind. Validate AI-generated SQL before
 
 ### Contributing
 Issues and Pull Requests are welcome. Before submitting:
-1. Keep zh/en copy in sync (`i18n.py` pairs zh/en keys one-to-one; currently 159 groups);
+1. Keep zh/en copy in sync (`i18n.py` pairs zh/en keys one-to-one; currently 218 groups);
 2. Any user-visible string must go through `i18n.t()` — no hard-coding;
 3. Follow the existing code style (type hints and Chinese comments are fine).
 

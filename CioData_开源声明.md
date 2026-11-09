@@ -12,7 +12,7 @@ This statement follows the same approach as CioNote and **keeps the CioData bran
 
 CioData 是一个本地运行的桌面小工具（Python + CustomTkinter + Tkinter）：
 把 Excel / CSV / Databricks 的数据加载进来，用自然语言向 AI 提问，它生成 SQL、
-本地执行、分页展示，并支持一键导出 CSV。右侧还内置 **SQL 语句 DIY 存储**（默认 10 个槽位，可增减至 1–50，
+本地执行、分页展示，并支持一键导出 CSV 与一键出图。右侧还内置 **SQL 语句 DIY 存储**（默认 10 个槽位，可增减至 1–50，
 存常用 SQL、一键采用到编辑器），全程只读，绝不改动原始数据。
 
 核心特性：
@@ -23,8 +23,9 @@ CioData 是一个本地运行的桌面小工具（Python + CustomTkinter + Tkint
 | AI 接入任选 | OpenAI 兼容 API / Ollama 本地模型 / Dify，三种后端配置互不污染 |
 | Databricks 只读 | 内置连接器 + 严格只读校验（拦截写操作、堆叠语句、注释绕过、CTE 夹带） |
 | 零安装便携版 | 自带 Python 3.12 运行时，解压即用，U 盘可携带 |
-| 中英双语 | 界面 159 键全量配对、一键切换；AI 提示词中英文各自独立（system_prompt / system_prompt_en） |
+| 中英双语 | 界面 218 键全量配对、一键切换；AI 提示词中英文各自独立（system_prompt / system_prompt_en） |
 | SQL 片段存储 | 右侧默认 10 槽位（可增减 1–50），名称显示 + 编辑弹窗 + 采用到 SQL 编辑器，持久化于 settings.json |
+| 一键出图 | 结果工具栏一键出图：饼图 / 柱状 / 折线 / 散点；按列类型自动选图，支持聚合与 Top N，数据变动自动重绘，可导出 200 dpi PNG |
 
 ## 二、开源范围
 

@@ -40,7 +40,7 @@ git clone <your-fork-or-this-repo>
 cd CioData
 python launcher.py             # 自动创建 .venv、装依赖（多镜像回退）后启动
 # 或直接双击 run.bat（Windows）
-python selfcheck.py            # 核心逻辑自检（20+ 项）
+python selfcheck.py            # 核心逻辑自检（80 项）
 ```
 
 `launcher.py` 使用**本机 Python**（推荐 3.12；3.9–3.12 均可，`customtkinter` 在 3.12 上最稳），自动创建本地 `.venv`、按 `requirements.txt` 安装依赖（清华/阿里/官方镜像自动回退），然后启动应用。
@@ -56,6 +56,7 @@ python selfcheck.py            # 核心逻辑自检（20+ 项）
 | 📁 数据源 | 本地 Excel(.xlsx/.xls)/CSV；Databricks SQL 连接（便携版内置，源码版一键装） |
 | 📝 SQL 编辑器 | 行号 + 关键字高亮，Ctrl+Enter 运行，SQLite 方言 |
 | 📋 结果表格 | 分页 / 点表头排序 / 双击单元格复制 / 一键导 CSV（UTF-8 BOM） |
+| 📊 **一键出图** | 结果表格上方一键出图：饼图 / 柱状 / 折线 / 散点，智能默认、随数据变动、可导 PNG |
 | 🤖 AI 对话 | 自然语言 → SQL，一键「采用并执行」或「仅采用」 |
 | 🧩 **SQL 语句 DIY 存储** | **右侧默认 10 个槽位（可增减 1–50）**：名称显示 + 编辑弹窗（自定义名称/语句）+ 采用（一键置入编辑器） |
 | 🧠 AI 后端 | OpenAI 兼容 API / Ollama 本地模型 / Dify，三种互不污染 |
@@ -72,6 +73,18 @@ python selfcheck.py            # 核心逻辑自检（20+ 项）
 - **采用**：一键把存储的 SQL 送入 SQL 编辑器，供你随后手动执行（空槽自动禁用）
 
 数据持久化在 `settings.json` 的 `sql_snippets` / `sql_snippet_slots`，关掉软件再开仍在。
+
+### 新增：一键出图
+
+结果表格上方的 `📊 出图` 按钮就在「导出CSV」旁边。画的就是你眼前的数据：SQL 已经筛过的行（全部行，不是当前页）、左侧栏已经勾选的列。
+
+- **四种图**：饼图 / 柱状图 / 折线图 / 散点图，一键切换
+- **智能默认**：日期 + 数值 → 折线；低基数分类 + 数值 → 柱状（Top 10）；两个数值 → 散点；只有一个分类 + 一个数值 → 饼图
+- **可随时改**：X / Y 轴、聚合方式（求和 / 平均 / 计数 / 最大值 / 不聚合）、排序、Top N、数值标签
+- **随数据变动**：重跑 SQL 或勾选/取消左侧字段，已打开的图自动重绘；若选中的列被取消勾选，会重算一次智能默认并在顶部提示
+- **导出**：当前图可另存为 PNG（200 dpi），直接贴进周报或 PPT
+
+超过 1 万的数值会自动缩写（中文「1.2万 / 1.3亿」，英文「1.2M / 1.3B」）；散点数据过大时自动等距采样，采样数量会写在提示条上。
 
 ---
 
@@ -127,20 +140,22 @@ CioData/
 ├── launcher.py          # 源码版启动器（venv + 依赖自检 + 多镜像安装）
 ├── config.py            # 配置中心 + 5 套双语提示词模板
 ├── settings.py          # settings.json 持久化
-├── i18n.py              # 中英文界面字符串（159 键全量配对）
+├── i18n.py              # 中英文界面字符串（218 键全量配对）
 ├── data_loader.py       # Excel/CSV/Databricks 加载
 ├── sql_engine.py        # SQLite 内存引擎 + 只读校验 + 超时保护
+├── charting.py          # 图表引擎：列类型画像 / 智能选图 / 生成 Figure
 ├── llm_client.py        # OpenAI 兼容 / Dify 客户端 + Ollama 模型扫描
 ├── ui/                  # CustomTkinter 界面
 │   ├── app.py           # 主窗口编排（含语言切换重建、窗口图标）
 │   ├── sidebar.py       # 左侧配置区
 │   ├── workspace.py     # SQL 编辑器 + 结果表格
+│   ├── chart_window.py  # 图表弹窗（单例，随数据变动重绘）
 │   ├── chat_panel.py    # AI 对话
 │   ├── sql_snippets.py  # SQL 语句 DIY 存储（默认 10 槽位，可增减）
 │   ├── sql_editor.py    # 行号 + 高亮编辑器
 │   ├── data_table.py    # 分页排序表格
 │   └── ...
-├── selfcheck.py         # 自检（20+ 项）
+├── selfcheck.py         # 自检（80 项）
 ├── generate_sample.py   # 中文示例数据生成
 ├── generate_sample_en.py# 英文示例数据生成
 ├── assets/              # 图标（icon.png / icon.ico）
@@ -179,7 +194,7 @@ CioData/
 
 ### 参与贡献
 欢迎 Issue 与 Pull Request。提交前请：
-1. 保持中英双语文案同步（`i18n.py` 中 zh/en 键一一对应，当前 159 组）；
+1. 保持中英双语文案同步（`i18n.py` 中 zh/en 键一一对应，当前 218 组）；
 2. 新增可见文案必须走 `i18n.t()`，不允许硬编码；
 3. 遵循现有代码风格（类型提示、中文注释均可）。
 

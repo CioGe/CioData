@@ -175,8 +175,70 @@ def main():
     finally:
         _rq.get = orig_get
 
-    # ---------- 6. 设置分家与旧版迁移 ----------
-    print("\n[6] 设置分家与迁移自愈")
+    # ---------- 6. 图表引擎 ----------
+    print("\n[6] 图表引擎")
+    charting = None
+    try:
+        import charting as _charting
+        charting = _charting
+        check("charting 可导入", True)
+    except Exception as e:
+        check("charting 可导入", False, e)
+
+    if charting is not None:
+        cdf = pd.DataFrame({
+            "城市": ["北京", "上海", "北京", "广州", "上海", "北京"],
+            "销售额": [100.0, 200.0, 150.0, 80.0, 120.0, 90.0],
+            "利润": [10.0, 20.0, 15.0, 8.0, 12.0, 9.0],
+            "日期": ["2024-01-01", "2024-01-02", "2024-01-03",
+                     "2024-02-01", "2024-02-02", "2024-02-03"],
+        })
+        prof = charting.infer_profile(cdf)
+        kinds = {c["name"]: c["kind"] for c in prof["columns"]}
+        check("数值列识别", kinds.get("销售额") == "number", kinds)
+        check("文本列识别", kinds.get("城市") == "text", kinds)
+        check("字符串日期识别", kinds.get("日期") == "date", kinds)
+
+        sp = charting.suggest(prof)
+        check("智能出图选中销售额", sp.y == "销售额", sp)
+        check("有日期列时默认折线", sp.ctype == "line", sp)
+
+        # 四种图都必须能生成，且只有一个坐标区
+        for ct, x, y, agg in (("bar", "城市", "销售额", "sum"),
+                              ("line", "日期", "销售额", "sum"),
+                              ("pie", "城市", "销售额", "sum"),
+                              ("scatter", "销售额", "利润", "none")):
+            try:
+                fig, notes = charting.build_figure(
+                    cdf, charting.ChartSpec(ct, x=x, y=y, agg=agg), theme="light")
+                ok = fig is not None and len(fig.axes) == 1
+                fig.clear()
+            except Exception as e:
+                ok, notes = False, str(e)
+            check(f"{ct} 图可生成", ok, notes)
+
+        # 空数据必须抛错，而不是画一张空图糊弄用户
+        try:
+            charting.build_figure(cdf.iloc[0:0],
+                                  charting.ChartSpec("bar", x="城市", y="销售额"))
+            empty_ok = False
+        except ValueError:
+            empty_ok = True
+        check("空数据抛 ValueError", empty_ok)
+
+        check("检测到中文字体", charting.ensure_fonts())
+
+        big = pd.DataFrame({"x": range(20000), "y": range(20000)})
+        sub, sampled = charting.sample_rows(big, 5000)
+        check("散点大数据自动采样", sampled and len(sub) <= 5000, len(sub))
+
+        # 配置可序列化（供 UI 记住上次选择）
+        spec2 = charting.ChartSpec.from_dict(sp.as_dict())
+        check("图表配置可往返序列化",
+              spec2.ctype == sp.ctype and spec2.x == sp.x and spec2.y == sp.y, spec2)
+
+    # ---------- 7. 设置分家与旧版迁移 ----------
+    print("\n[7] 设置分家与迁移自愈")
     import json
     import tempfile
     from settings import Settings

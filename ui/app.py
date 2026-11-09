@@ -71,6 +71,7 @@ class App(ctk.CTk):
         self.chat_log = []         # 聊天面板渲染日志（语言切换后重放）
         self._last_checked = None  # 最近一次字段勾选状态
         self._last_status = ""     # 状态栏最近文案
+        self._chart_win = None     # 图表弹窗（单例）
 
         # ---------- 任务器 ----------
         self.tasks = TaskRunner(self)
@@ -145,6 +146,8 @@ class App(ctk.CTk):
         self.workspace = Workspace(body, callbacks={
             "on_run": self._run_sql,
             "on_export": self._export_csv,
+            "on_chart": self._open_chart,
+            "on_chart_data": self._chart_data_changed,
             "on_reset_sql": self._reset_view,
             "on_page_size": self._on_page_size,
         })
@@ -202,6 +205,8 @@ class App(ctk.CTk):
         """销毁并重建三区布局，从 App 状态完整恢复（数据/SQL/聊天/来源信息）。"""
         # 1. 快照
         sql_text = self.workspace.get_sql() if hasattr(self, "workspace") else config.DEFAULT_SQL
+        # 图表弹窗是独立 Toplevel，界面重建后它的文案会全部过期，先关掉
+        self._close_chart()
         # 2. 销毁
         for attr in ("_titlebar", "_body", "_statusbar"):
             w = getattr(self, attr, None)
@@ -369,8 +374,10 @@ class App(ctk.CTk):
             checked = [c for c in result.columns
                        if (c in old_vis) or (c not in self.loaded_df.columns)]
             self.sidebar.set_columns(list(result.columns), checked=checked)
-            self.workspace.set_data(apply_column_visibility(result, checked),
+            view = apply_column_visibility(result, checked)
+            self.workspace.set_data(view,
                                     page_size=self.settings.get("page_size", config.DEFAULT_PAGE_SIZE))
+            self._chart_data_changed(view)
             self.workspace.show_msg(i18n.t("msg.sql_ok", rows=f"{len(result):,}",
                                            cols=len(result.columns)), "ok")
             self._set_status(i18n.t("status.sql_ok", rows=f"{len(result):,}",
@@ -391,17 +398,21 @@ class App(ctk.CTk):
             return
         self.result_df = self.loaded_df.copy()
         self.sidebar.set_columns(list(self.loaded_df.columns))
-        self.workspace.set_data(apply_column_visibility(self.result_df, self.sidebar.get_visible_columns()),
+        view = apply_column_visibility(self.result_df, self.sidebar.get_visible_columns())
+        self.workspace.set_data(view,
                                 page_size=self.settings.get("page_size", config.DEFAULT_PAGE_SIZE))
+        self._chart_data_changed(view)
         self._set_status(i18n.t("status.view_reset"))
 
     def _on_columns_changed(self, cols):
         if self.result_df is None:
             return
         self._last_checked = cols
-        self.workspace.set_data(apply_column_visibility(self.result_df, cols),
+        view = apply_column_visibility(self.result_df, cols)
+        self.workspace.set_data(view,
                                 page_size=self.settings.get("page_size", config.DEFAULT_PAGE_SIZE),
                                 keep_page=True)
+        self._chart_data_changed(view)
 
     def _on_page_size(self, n):
         self.settings.set("page_size", n)
@@ -431,6 +442,64 @@ class App(ctk.CTk):
             self.workspace.show_msg(err, "error")
 
         self.tasks.run(i18n.t("task.export"), work, on_success=on_success, on_error=on_error)
+
+    # ==================== 图表 ====================
+    def _open_chart(self, df):
+        """打开（或唤醒）图表窗口。单例：重复点击只刷新，不叠窗口。"""
+        if df is None or len(df) == 0 or not len(df.columns):
+            self.workspace.show_msg(i18n.t("chart.no_data"), "warn")
+            return
+
+        # 延迟导入：matplotlib 缺失时只有图表功能不可用，主程序照常启动
+        try:
+            from .chart_window import ChartWindow
+        except Exception as e:
+            self.workspace.show_msg(
+                i18n.t("chart.need_matplotlib", err=e), "error")
+            return
+
+        win = self._chart_win
+        if win is not None:
+            try:
+                if win.winfo_exists():
+                    win.on_data_changed(df)
+                    win.deiconify()
+                    win.lift()
+                    win.focus_force()
+                    return
+            except Exception:
+                pass
+            self._chart_win = None
+
+        try:
+            self._chart_win = ChartWindow(self, df, on_closed=self._on_chart_closed)
+            self._set_status(i18n.t("status.chart_open", rows=f"{len(df):,}"))
+        except Exception as e:
+            self._chart_win = None
+            self.workspace.show_msg(i18n.t("chart.err.build", err=e), "error")
+
+    def _on_chart_closed(self):
+        self._chart_win = None
+
+    def _chart_data_changed(self, df):
+        """数据视图变化 → 让已打开的图表跟随（未打开则零开销）。"""
+        win = self._chart_win
+        if win is None:
+            return
+        try:
+            if win.winfo_exists():
+                win.on_data_changed(df)
+        except Exception:
+            self._chart_win = None
+
+    def _close_chart(self):
+        win = self._chart_win
+        self._chart_win = None
+        if win is not None:
+            try:
+                win.close()
+            except Exception:
+                pass
 
     # ==================== AI 对话 ====================
     def _build_llm_client(self):
@@ -592,6 +661,12 @@ class App(ctk.CTk):
                 self.workspace.apply_theme()
         except Exception:
             pass
+        # 图表不跟随 appearance mode，需显式重绘
+        if self._chart_win is not None:
+            try:
+                self._chart_win.on_theme_changed()
+            except Exception:
+                self._chart_win = None
 
     # ==================== 异常处理 ====================
     # 无害的“widget 已销毁”类错误：界面重建/关闭后残留的 after 回调触发，
@@ -641,4 +716,5 @@ class App(ctk.CTk):
             self.settings.save()
         except Exception:
             pass
+        self._close_chart()
         self.destroy()

@@ -30,7 +30,8 @@ APP = os.path.join(HERE, "main.py")
 REQ = os.path.join(HERE, "requirements.txt")
 
 # 源码版依赖（与 requirements.txt 保持一致）
-REQUIRED = ["numpy", "pandas", "openpyxl", "requests", "customtkinter", "tkinter"]
+REQUIRED = ["numpy", "pandas", "openpyxl", "requests", "customtkinter", "tkinter",
+            "matplotlib"]
 
 MIRRORS = [
     "https://pypi.tuna.tsinghua.edu.cn/simple",

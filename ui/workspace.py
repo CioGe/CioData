@@ -19,6 +19,8 @@ class Workspace(ctk.CTkFrame):
         callbacks:
           on_run(sql)          执行SQL
           on_export(df)        导出CSV
+          on_chart(df)         打开图表窗口
+          on_chart_data(df)    数据变化，通知图表窗口跟随
           on_reset_sql()       重置SQL
           on_page_size(n)      每页行数变更
         """
@@ -54,6 +56,7 @@ class Workspace(ctk.CTkFrame):
         self.table = DataTable(
             self,
             on_export=self._export,
+            on_chart=self._chart,
             on_page_size_change=lambda n: self._cb.get("on_page_size", lambda _n: None)(n),
         )
         self.table.pack(fill="both", expand=True, padx=10, pady=(8, 10))
@@ -82,6 +85,12 @@ class Workspace(ctk.CTkFrame):
     def refresh_table(self):
         self.table.refresh()
 
+    def notify_chart_data(self, df):
+        """数据视图变化时通知图表窗口（未打开则什么也不做）。"""
+        cb = self._cb.get("on_chart_data")
+        if cb:
+            cb(df)
+
     def apply_theme(self):
         self.editor.apply_theme()
         self.table.apply_theme()
@@ -103,3 +112,7 @@ class Workspace(ctk.CTkFrame):
     def _export(self, df):
         if self._cb.get("on_export"):
             self._cb["on_export"](df)
+
+    def _chart(self, df):
+        if self._cb.get("on_chart"):
+            self._cb["on_chart"](df)
