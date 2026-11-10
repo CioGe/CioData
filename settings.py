@@ -42,6 +42,8 @@ _DEFAULTS = {
     # SQL 片段 DIY 存储（默认 10 个槽位，数量可增减）
     "sql_snippets": [{"name": "", "sql": ""} for _ in range(10)],
     "sql_snippet_slots": 10,
+    # 图表：记住上次的类型/聚合/排序/TopN/XY（空字典=首次使用，走智能默认）
+    "chart_prefs": {},
     # Databricks
     "db_host": "",
     "db_http_path": "",

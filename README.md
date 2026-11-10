@@ -83,6 +83,8 @@ The `📊 Chart` button sits next to **Export CSV** above the results table. It 
 - **Adjustable**: X / Y axis, aggregation (sum / average / count / max / none), sort order, Top N, value labels
 - **Live follow**: re-run SQL or toggle a sidebar column and the open chart redraws itself; if the selected column disappears it falls back to a fresh smart default
 - **Export**: save the current chart as PNG (200 dpi) for reports or slides
+- **Remembers your setup**: type / axes / aggregation / Top N / labels persist across sessions (`settings.json` → `chart_prefs`); falls back to smart defaults if those columns disappear
+- **Resizable**: the chart re-flows when you resize the window
 
 Numbers over 10,000 are abbreviated (10K / 1.2M in English, 1.2万 / 1.3亿 in Chinese); large scatters are evenly sampled with the sample size shown in the hint bar.
 

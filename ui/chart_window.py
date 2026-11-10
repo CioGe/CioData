@@ -23,7 +23,7 @@ WINDOW_H = 660
 FIG_W = 8.4
 FIG_H = 4.9
 
-TOPN_OPTIONS = (3, 5, 10, 15, 20, 30, 0)   # 0 = 全部
+TOPN_OPTIONS = tuple(charting.TOP_N_CHOICES) + (0,)   # 0 = 全部
 
 
 def _theme_key():
@@ -33,16 +33,19 @@ def _theme_key():
 class ChartWindow(ctk.CTkToplevel):
     """单例图表窗口。由 App._open_chart 创建，App 持有引用。"""
 
-    def __init__(self, master, df, spec=None, on_closed=None, **kw):
+    def __init__(self, master, df, spec=None, settings=None, on_closed=None, **kw):
         super().__init__(master, **kw)
         self._fonts = FontsHolder.get()
         self._on_closed = on_closed
+        self._settings = settings
         self.df = df
         self._fig = None
         self._canvas = None
         self._pending = False
         self._dirty_note = False     # 是否需要在顶部提示「列已变更」
         self._closed = False
+        self._resize_job = None
+        self._last_wh = (0, 0)
 
         # 显示名 → 内部 key 的反查表（ComboBox 传值不可靠，统一走映射）
         self._type_labels = {i18n.t(f"chart.type.{k}"): k for k in charting.CHART_TYPES}
@@ -58,10 +61,13 @@ class ChartWindow(ctk.CTkToplevel):
         self.resizable(True, True)
         self.minsize(760, 560)
 
-        # 智能默认：调用方没给配置时按当前数据推断
+        # 智能默认：先看有没有上次用过的配置，没有才按当前数据推断
         prof = charting.infer_profile(df)
         self._profile = prof
-        self.spec = spec.copy() if spec else charting.suggest(prof)
+        if spec is not None:
+            self.spec = spec.copy()
+        else:
+            self.spec = self._restore_or_suggest(prof)
         self._has_numeric = any(c["kind"] == "number" for c in prof["columns"])
 
         self._build()
@@ -69,6 +75,7 @@ class ChartWindow(ctk.CTkToplevel):
         self._redraw()
 
         self.protocol("WM_DELETE_WINDOW", self.close)
+        self.bind("<Configure>", self._on_configure)
         self.after(60, self._center_on_parent)
         self.after(120, self.focus_force)
 
@@ -159,6 +166,77 @@ class ChartWindow(ctk.CTkToplevel):
                                        command=self._redraw, height=30, width=80)
         self.refresh_btn.pack(side="right", padx=(0, 8))
 
+    # ==================== 配置记忆 ====================
+    def _restore_or_suggest(self, prof):
+        """优先恢复上次配置；列已不在当前数据里就退回按数据推断的默认。"""
+        saved = None
+        if self._settings is not None:
+            raw = self._settings.get("chart_prefs")
+            if isinstance(raw, dict) and raw:
+                saved = raw
+        if not saved:
+            return charting.suggest(prof)
+
+        spec = charting.ChartSpec.from_dict(saved)
+        names = {c["name"] for c in prof["columns"]}
+        nums = {c["name"] for c in prof["columns"] if c["kind"] == "number"}
+        # 列被改名/换数据源时不能硬套旧配置，否则打开就是一张空图
+        if spec.x is not None and spec.x not in names:
+            return charting.suggest(prof)
+        if spec.y is not None and spec.y not in names:
+            return charting.suggest(prof)
+        if spec.ctype == "scatter" and not (spec.x in nums and spec.y in nums):
+            return charting.suggest(prof)
+        if spec.agg != "count" and spec.ctype != "scatter" and spec.y not in nums:
+            return charting.suggest(prof)
+        return spec
+
+    def _save_prefs(self):
+        """只写内存，落盘统一放到 close()（避免每动一次下拉就写一次盘）。"""
+        if self._settings is not None:
+            self._settings.set("chart_prefs", self.spec.as_dict())
+
+    # ==================== 尺寸跟随 ====================
+    def _on_configure(self, event):
+        """窗口缩放后延迟重排；子控件触发的 Configure 一律忽略。"""
+        if event.widget is not self:
+            return
+        wh = (event.width, event.height)
+        if wh == self._last_wh:
+            return
+        self._last_wh = wh
+        if self._resize_job is not None:
+            try:
+                self.after_cancel(self._resize_job)
+            except Exception:
+                pass
+        self._resize_job = self.after(180, self._apply_size)
+
+    def _plot_figsize(self):
+        """按画布实际像素算 figsize（dpi=100，1 英寸 = 100 px）。"""
+        w = self.plot_host.winfo_width()
+        h = self.plot_host.winfo_height()
+        w = w if w > 200 else int(FIG_W * 100)
+        h = h if h > 160 else int(FIG_H * 100)
+        return max(w / 100.0, 3.2), max(h / 100.0, 2.0)
+
+    def _apply_size(self):
+        """只改 Figure 尺寸并重绘，不重建 Figure —— 重建会整块闪一下。"""
+        self._resize_job = None
+        if self._closed or self._fig is None or self._canvas is None:
+            return
+        try:
+            if not self.winfo_exists():
+                return
+        except Exception:
+            return
+        try:
+            self._fig.set_size_inches(*self._plot_figsize())
+            self._fig.tight_layout(pad=1.3)
+            self._canvas.draw_idle()
+        except Exception:
+            pass
+
     # ==================== 控件 ↔ spec ====================
     def _col_names(self):
         return [str(c) for c in self.df.columns]
@@ -176,7 +254,7 @@ class ChartWindow(ctk.CTkToplevel):
         self.agg_menu.configure(values=list(self._agg_labels.keys()))
         self.sort_menu.configure(values=list(self._sort_labels.keys()))
         self.top_menu.configure(values=[i18n.t("chart.topn.all")] +
-                               [str(n) for n in TOPN_OPTIONS if n])
+                               [str(n) for n in charting.TOP_N_CHOICES])
 
     def _apply_spec_to_widgets(self):
         self._refresh_options()
@@ -254,7 +332,8 @@ class ChartWindow(ctk.CTkToplevel):
                     cur = min(cands, key=lambda c: c["nunique"])
             # 从饼图/散点切回来时 Top N 是 0，恢复成默认 Top 10
             if not self.spec.top_n:
-                self.spec.top_n = min(10, cur["nunique"]) if cur else 10
+                self.spec.top_n = charting.normalize_top_n(
+                    10, cur["nunique"] if cur else None)
         elif self.spec.ctype == "line":
             # 折线是趋势图：有日期列就用日期做 X，按时间升序
             dates = [c["name"] for c in self._profile["columns"]
@@ -270,7 +349,19 @@ class ChartWindow(ctk.CTkToplevel):
 
     def _on_x(self, label):
         self.spec.x = None if label == i18n.t("chart.axis.none") else label
+        self._clamp_top_n()
+        self._apply_spec_to_widgets()
         self._redraw()
+
+    def _clamp_top_n(self):
+        """换 X 后类别数可能变小，Top N 要跟着回落到合法值。"""
+        if not self.spec.top_n or self.spec.x is None:
+            return
+        cur = next((c for c in self._profile["columns"]
+                    if c["name"] == self.spec.x), None)
+        if cur is not None and cur["nunique"] < self.spec.top_n:
+            self.spec.top_n = charting.normalize_top_n(
+                self.spec.top_n, cur["nunique"])
 
     def _on_y(self, label):
         self.spec.y = None if label == i18n.t("chart.axis.none") else label
@@ -312,13 +403,17 @@ class ChartWindow(ctk.CTkToplevel):
             return
         try:
             fig, notes = charting.build_figure(
-                self.df, self.spec, theme=_theme_key(), figsize=(FIG_W, FIG_H))
+                self.df, self.spec, theme=_theme_key(),
+                figsize=self._plot_figsize())
         except ValueError as e:
             self._show_error(str(e))
             return
 
         self._swap_canvas(fig)
         self._set_notes(notes)
+        self._save_prefs()
+        # 首次绘制时 plot_host 可能还没完成布局，尺寸校正一次
+        self.after(60, self._apply_size)
 
     def _swap_canvas(self, fig):
         # 先销毁旧画布并把旧 Figure 的内容清空，否则连开连关会持续吃内存
@@ -442,6 +537,19 @@ class ChartWindow(ctk.CTkToplevel):
         if self._closed:
             return
         self._closed = True
+        # 先把本次配置落盘，下次打开还是这套
+        self._save_prefs()
+        if self._settings is not None:
+            try:
+                self._settings.save()
+            except Exception:
+                pass
+        if self._resize_job is not None:
+            try:
+                self.after_cancel(self._resize_job)
+            except Exception:
+                pass
+            self._resize_job = None
         try:
             if self._canvas is not None:
                 self._canvas.get_tk_widget().destroy()

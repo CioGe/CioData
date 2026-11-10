@@ -33,6 +33,10 @@ MAX_LINE_POINTS = 400    # 折线最多折点数，超出抽稀
 SCATTER_SAMPLE_MAX = 5000  # 散点最多点数
 CATEGORY_LIMIT = 20      # 认为「低基数分类」的上限
 
+# Top N 的合法取值：UI 下拉和智能默认都从这里取，避免出现「Top 4」这种
+# 下拉里没有、改一次就改不回来的值
+TOP_N_CHOICES = (3, 5, 10, 15, 20, 30)
+
 EXPORT_DPI = 200
 
 # 与 theme.py 主色呼应的克制色板（不用 matplotlib 默认的饱和色）
@@ -160,6 +164,25 @@ def infer_profile(df):
     return {"n_rows": int(len(df)), "columns": cols}
 
 
+def normalize_top_n(value, nunique=None):
+    """把 Top N 规整到 TOP_N_CHOICES 里的合法值；0 表示「全部」。
+
+    类别数为 4 时给 5 而不是 4 —— 4 不在下拉里，用户一旦动过就回不去。
+    """
+    try:
+        v = int(value or 0)
+    except Exception:
+        return 10
+    if v <= 0:
+        return 0
+    if nunique:
+        v = min(v, max(int(nunique), 1))
+    for opt in TOP_N_CHOICES:
+        if opt >= v:
+            return opt
+    return TOP_N_CHOICES[-1]
+
+
 class ChartSpec:
     """一次出图的完整配置。字段都可被 UI 改写。"""
 
@@ -256,7 +279,7 @@ def suggest(profile):
                                  agg="sum", sort="desc", top_n=0)
             return ChartSpec("bar", x=cat["name"], y=nums[0],
                              agg="sum", sort="desc",
-                             top_n=min(10, cat["nunique"]))
+                             top_n=normalize_top_n(10, cat["nunique"]))
 
         # 4) 两个以上数值 → 散点（用最像指标的列作 Y，另一个作 X）
         if len(nums) >= 2:
@@ -454,13 +477,15 @@ def _draw_bar(ax, df, spec, th, lang, notes):
 
     idx = np.arange(len(labels))
     # 同一维度用统一主色：颜色不承载信息，避免 8 种颜色互相干扰
-    bars = ax.bar(idx, values, color=PALETTE[0], width=0.68, zorder=3,
+    # 柱宽随类别数收放：4 个类别时 0.8 会粗得像色块
+    bar_w = 0.36 + 0.42 * min(1.0, len(labels) / 12.0)
+    bars = ax.bar(idx, values, color=PALETTE[0], width=bar_w, zorder=3,
                   edgecolor="none")
     shown_ticks = _thin_ticks(ax, labels)
     _style_axes(ax, th, lang)
     _rotate_xticks(ax, shown_ticks)
 
-    ax.set_xlabel(spec.x or i18n.t("chart.row_index"), color=th["muted"])
+    ax.set_xlabel(spec.x or i18n.t("chart.row_index"), color=th["muted"], labelpad=9)
     if spec.y is None:
         ylabel = _agg_label("count")
     elif spec.agg in ("none", "count"):
@@ -525,7 +550,7 @@ def _draw_line(ax, df, spec, th, lang, notes):
     _style_axes(ax, th, lang)
     _rotate_xticks(ax, shown_ticks)
 
-    ax.set_xlabel(spec.x, color=th["muted"])
+    ax.set_xlabel(spec.x, color=th["muted"], labelpad=9)
     ax.set_ylabel(spec.y, color=th["muted"])
 
 
@@ -604,7 +629,7 @@ def _draw_scatter(ax, df, spec, th, lang, fig, notes):
     ax.scatter(sub["__x"], sub["__y"], s=16, color=PALETTE[0], alpha=0.55,
                edgecolors="none", zorder=3)
     _style_axes(ax, th, lang)
-    ax.set_xlabel(spec.x, color=th["muted"])
+    ax.set_xlabel(spec.x, color=th["muted"], labelpad=9)
     ax.set_ylabel(spec.y, color=th["muted"])
     ax.xaxis.set_major_formatter(_num_fmt(lang))
     _ = fig

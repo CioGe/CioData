@@ -472,7 +472,8 @@ class App(ctk.CTk):
             self._chart_win = None
 
         try:
-            self._chart_win = ChartWindow(self, df, on_closed=self._on_chart_closed)
+            self._chart_win = ChartWindow(self, df, settings=self.settings,
+                                          on_closed=self._on_chart_closed)
             self._set_status(i18n.t("status.chart_open", rows=f"{len(df):,}"))
         except Exception as e:
             self._chart_win = None
