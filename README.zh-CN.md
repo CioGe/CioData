@@ -40,7 +40,7 @@ git clone <your-fork-or-this-repo>
 cd CioData
 python launcher.py             # 自动创建 .venv、装依赖（多镜像回退）后启动
 # 或直接双击 run.bat（Windows）
-python selfcheck.py            # 核心逻辑自检（80 项）
+python selfcheck.py            # 核心逻辑自检（82 项）
 ```
 
 `launcher.py` 使用**本机 Python**（推荐 3.12；3.9–3.12 均可，`customtkinter` 在 3.12 上最稳），自动创建本地 `.venv`、按 `requirements.txt` 安装依赖（清华/阿里/官方镜像自动回退），然后启动应用。
@@ -85,6 +85,8 @@ python selfcheck.py            # 核心逻辑自检（80 项）
 - **导出**：当前图可另存为 PNG（200 dpi），直接贴进周报或 PPT
 - **记住上次配置**：类型 / X / Y / 聚合 / Top N / 数值标签跨会话保留（`settings.json` → `chart_prefs`），列不存在时自动回退智能默认
 - **窗口可缩放**：拖大窗口，图跟着重排，不留白边
+- **窗口自动适配屏幕**：按显示器缩放比例算尺寸并夹进屏幕可用区，125% / 150% 缩放下也不会超出屏幕、不会只露出图的一部分
+- **不会切到画不出来的图**：散点图至少要两个数值列，不够时提示一句并留在当前类型；坐标轴下拉只列出能画出图的列
 
 超过 1 万的数值会自动缩写（中文「1.2万 / 1.3亿」，英文「1.2M / 1.3B」）；散点数据过大时自动等距采样，采样数量会写在提示条上。
 
@@ -142,7 +144,7 @@ CioData/
 ├── launcher.py          # 源码版启动器（venv + 依赖自检 + 多镜像安装）
 ├── config.py            # 配置中心 + 5 套双语提示词模板
 ├── settings.py          # settings.json 持久化
-├── i18n.py              # 中英文界面字符串（218 键全量配对）
+├── i18n.py              # 中英文界面字符串（220 键全量配对）
 ├── data_loader.py       # Excel/CSV/Databricks 加载
 ├── sql_engine.py        # SQLite 内存引擎 + 只读校验 + 超时保护
 ├── charting.py          # 图表引擎：列类型画像 / 智能选图 / 生成 Figure
@@ -157,7 +159,7 @@ CioData/
 │   ├── sql_editor.py    # 行号 + 高亮编辑器
 │   ├── data_table.py    # 分页排序表格
 │   └── ...
-├── selfcheck.py         # 自检（80 项）
+├── selfcheck.py         # 自检（82 项）
 ├── generate_sample.py   # 中文示例数据生成
 ├── generate_sample_en.py# 英文示例数据生成
 ├── assets/              # 图标（icon.png / icon.ico）
@@ -196,7 +198,7 @@ CioData/
 
 ### 参与贡献
 欢迎 Issue 与 Pull Request。提交前请：
-1. 保持中英双语文案同步（`i18n.py` 中 zh/en 键一一对应，当前 218 组）；
+1. 保持中英双语文案同步（`i18n.py` 中 zh/en 键一一对应，当前 220 组）；
 2. 新增可见文案必须走 `i18n.t()`，不允许硬编码；
 3. 遵循现有代码风格（类型提示、中文注释均可）。
 

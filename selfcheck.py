@@ -140,6 +140,31 @@ def main():
     for v, k in config.ROW_LIMIT_OPTIONS:
         check(f"行数上限i18n键存在: {k}", k in zh_keys and k in en_keys)
 
+    # UI 代码里写死的 i18n key 必须都在词表里（新增文案最容易只改中文）
+    import re as _re
+    ui_missing = []
+    _here = os.path.dirname(os.path.abspath(__file__))
+    for fn in ("ui/chart_window.py", "ui/data_table.py", "ui/workspace.py"):
+        path = os.path.join(_here, fn)
+        if not os.path.exists(path):
+            continue
+        src = open(path, encoding="utf-8").read()
+        for key in sorted(set(_re.findall(r'i18n\.t\(\s*["\']([^"\']+)["\']', src))):
+            if key not in zh_keys or key not in en_keys:
+                ui_missing.append(f"{fn}:{key}")
+    check("UI 硬编码 i18n 键都已配置", not ui_missing, "；".join(ui_missing[:6]))
+
+    # 图表类型/聚合/排序是拼 key 的，词表里不能缺项
+    dyn_missing = []
+    for fam, items in (("chart.type", ("bar", "line", "pie", "scatter")),
+                       ("chart.agg", ("sum", "mean", "count", "max", "none")),
+                       ("chart.sort", ("desc", "asc", "none"))):
+        for it in items:
+            k = f"{fam}.{it}"
+            if k not in zh_keys or k not in en_keys:
+                dyn_missing.append(k)
+    check("图表动态 i18n 键齐全", not dyn_missing, "；".join(dyn_missing))
+
     # ---------- 5. Ollama 模型扫描（mock requests） ----------
     print("\n[5] Ollama 本地模型扫描")
     from llm_client import list_ollama_models

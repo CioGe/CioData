@@ -19,7 +19,7 @@ Key features:
 | Pluggable AI | OpenAI-compatible API / local Ollama models / Dify — three backends, isolated configs |
 | Databricks read-only | Built-in connector + strict read-only validation (blocks writes, stacked statements, comment bypass, CTE smuggling) |
 | Zero-install portable | Bundled Python 3.12 runtime, extract-and-run, USB-portable |
-| Bilingual | UI fully paired (218 zh/en keys), one-click switch; **separate zh/en AI prompts** (`system_prompt` / `system_prompt_en`) |
+| Bilingual | UI fully paired (220 zh/en keys), one-click switch; **separate zh/en AI prompts** (`system_prompt` / `system_prompt_en`) |
 | SQL Snippet Storage | 10 slots by default (adjustable 1–50 via − / +): name display + edit popup + adopt into the SQL editor, persisted in `settings.json` |
 | One-click charts | Pie / bar / line / scatter from the results toolbar; smart defaults from column profiling, aggregation + Top N, live redraw when data changes, PNG export at 200 dpi |
 

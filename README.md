@@ -85,6 +85,8 @@ The `📊 Chart` button sits next to **Export CSV** above the results table. It 
 - **Export**: save the current chart as PNG (200 dpi) for reports or slides
 - **Remembers your setup**: type / axes / aggregation / Top N / labels persist across sessions (`settings.json` → `chart_prefs`); falls back to smart defaults if those columns disappear
 - **Resizable**: the chart re-flows when you resize the window
+- **Fits the screen**: the window sizes itself for the current display scaling and is clamped to the screen, so 125% / 150% setups never cut the chart off
+- **Never flips to an impossible chart**: scatter needs two numeric columns — otherwise you get a hint and stay on the current type; the axis dropdowns only list columns that actually work
 
 Numbers over 10,000 are abbreviated (10K / 1.2M in English, 1.2万 / 1.3亿 in Chinese); large scatters are evenly sampled with the sample size shown in the hint bar.
 
@@ -141,7 +143,7 @@ CioData/
 ├── launcher.py          # source launcher (venv + dependency self-check + mirror install)
 ├── config.py            # config center + 5 bilingual prompt templates
 ├── settings.py          # settings.json persistence
-├── i18n.py              # zh/en UI strings (218 fully-paired keys)
+├── i18n.py              # zh/en UI strings (220 fully-paired keys)
 ├── data_loader.py       # Excel/CSV/Databricks loading
 ├── sql_engine.py        # in-memory SQLite engine + read-only checks + timeout
 ├── charting.py          # chart engine: column profiling, smart defaults, Figure building
@@ -156,7 +158,7 @@ CioData/
 │   ├── sql_editor.py    # line-numbered highlighted editor
 │   ├── data_table.py    # paginated sortable table
 │   └── ...
-├── selfcheck.py         # core self-checks (80 items)
+├── selfcheck.py         # core self-checks (82 items)
 ├── generate_sample.py   # Chinese sample-data generator
 ├── generate_sample_en.py# English sample-data generator
 ├── assets/              # icon (icon.png / icon.ico)
@@ -195,7 +197,7 @@ Provided "as is", without warranty of any kind. Validate AI-generated SQL before
 
 ### Contributing
 Issues and Pull Requests are welcome. Before submitting:
-1. Keep zh/en copy in sync (`i18n.py` pairs zh/en keys one-to-one; currently 218 groups);
+1. Keep zh/en copy in sync (`i18n.py` pairs zh/en keys one-to-one; currently 220 groups);
 2. Any user-visible string must go through `i18n.t()` — no hard-coding;
 3. Follow the existing code style (type hints and Chinese comments are fine).
 
